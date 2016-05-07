@@ -1,0 +1,16 @@
+URL url = new URL("http://127.0.0.1:8080/AndroidWeb/UploadFileServlet");
+HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+httpConn.setRequestMethod("POST");
+httpConn.setDoOutput(true);// 设置该连接允许写入
+
+HttpMultipartEntity multipart = new HttpMultipartEntity();
+multipart.addPart("username", "longshu");//普通表单
+multipart.addPart("password", "longshu");
+File uploadfile = new File("upload.txt");
+multipart.addPart("uploadfile", uploadfile, "text/plain");//文件表单
+httpConn.setRequestProperty("Content-Type", multipart.getContentType());
+httpConn.setRequestProperty("Content-Length", multipart.getContentLength() + "");
+
+multipart.writeTo(httpConn.getOutputStream());//写数据
+multipart.free();//释放资源
+....
