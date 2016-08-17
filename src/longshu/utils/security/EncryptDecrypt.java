@@ -5,6 +5,8 @@ import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -18,6 +20,8 @@ import javax.crypto.spec.SecretKeySpec;
  * @author longshu 2016年4月13日
  */
 public class EncryptDecrypt {
+	private static Logger logger = Logger.getLogger("EncryptDecrypt");
+
 	// 无需创建对象
 	private EncryptDecrypt() {
 	}
@@ -34,6 +38,7 @@ public class EncryptDecrypt {
 			byte targetDigest[] = sha1Digest.digest();
 			return targetDigest;
 		} catch (NoSuchAlgorithmException e) {
+			logger.log(Level.WARNING, e.getMessage(), e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -61,6 +66,7 @@ public class EncryptDecrypt {
 			// 获得密文
 			return md5Digest.digest();
 		} catch (NoSuchAlgorithmException e) {
+			logger.log(Level.WARNING, e.getMessage(), e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -85,35 +91,35 @@ public class EncryptDecrypt {
 		try {// 优先使用第三方库
 			clazz = Class.forName("org.apache.commons.codec.binary.Base64");
 			encodeMethod = clazz.getMethod("encodeBase64", byte[].class);
-			System.out.println("encodeBASE64-->" + clazz);
-			System.out.println("encodeMethod-->" + encodeMethod);
 			// 反射方法 静态方法执行无需对象
 			return new String((byte[]) encodeMethod.invoke(null, source.getBytes()));
-		} catch (ClassNotFoundException e) {
+		} catch (ClassNotFoundException ce) {
 			String vm = System.getProperty("java.vm.name");
-			System.out.println(vm);
+			logger.log(Level.INFO, "vm:" + vm);
 			try {
 				if ("Dalvik".equals(vm)) {// Android
 					clazz = Class.forName("android.util.Base64");
 					// byte[] Base64.encode(byte[] input,int flags)
 					encodeMethod = clazz.getMethod("encode", byte[].class, int.class);
-					System.out.println("encodeBASE64-->" + clazz);
-					System.out.println("encodeMethod-->" + encodeMethod);
 					return new String((byte[]) encodeMethod.invoke(null, source.getBytes(), 0));
 				} else {// JavaSE/JavaEE
 					clazz = Class.forName("sun.misc.BASE64Encoder");
 					encodeMethod = clazz.getMethod("encode", byte[].class);
-					System.out.println("encodeBASE64-->" + clazz);
-					System.out.println("encodeMethod-->" + encodeMethod);
 					return (String) encodeMethod.invoke(clazz.newInstance(), source.getBytes());
 				}
-			} catch (ClassNotFoundException e1) {
+			} catch (ClassNotFoundException e) {
+				logger.log(Level.WARNING, e.getMessage(), e);
 				return null;
-			} catch (Exception e1) {
+			} catch (Exception e) {
+				logger.log(Level.WARNING, e.getMessage(), e);
 				return null;
 			}
 		} catch (Exception e) {
+			logger.log(Level.WARNING, e.getMessage(), e);
 			return null;
+		} finally {
+			logger.log(Level.INFO, "encodeBASE64-->" + clazz);
+			logger.log(Level.INFO, "encodeMethod-->" + encodeMethod);
 		}
 		/*
 		 * Android
@@ -141,39 +147,38 @@ public class EncryptDecrypt {
 	public static String decodeBASE64(String encodeSource) {
 		Class<?> clazz = null;
 		Method decodeMethod = null;
-
 		try {// 优先使用第三方库
 			clazz = Class.forName("org.apache.commons.codec.binary.Base64");
 			decodeMethod = clazz.getMethod("decodeBase64", byte[].class);
-			System.out.println("decodeBASE64-->" + clazz);
-			System.out.println("decodeMethod-->" + decodeMethod);
 			// 反射方法 静态方法执行无需对象
 			return new String((byte[]) decodeMethod.invoke(null, encodeSource.getBytes()));
-		} catch (ClassNotFoundException e) {
+		} catch (ClassNotFoundException ce) {
 			String vm = System.getProperty("java.vm.name");
-			System.out.println(vm);
+			logger.log(Level.INFO, "vm:" + vm);
 			try {
 				if ("Dalvik".equals(vm)) {// Android
 					clazz = Class.forName("android.util.Base64");
 					// byte[] Base64.decode(byte[] input, int flags)
 					decodeMethod = clazz.getMethod("decode", byte[].class, int.class);
-					System.out.println("decodeBASE64-->" + clazz);
-					System.out.println("decodeMethod-->" + decodeMethod);
 					return new String((byte[]) decodeMethod.invoke(null, encodeSource.getBytes(), 0));
 				} else { // JavaSE/JavaEE
 					clazz = Class.forName("sun.misc.BASE64Decoder");
 					decodeMethod = clazz.getMethod("decodeBuffer", String.class);
-					System.out.println("decodeBASE64-->" + clazz);
-					System.out.println("decodeMethod-->" + decodeMethod);
 					return new String((byte[]) decodeMethod.invoke(clazz.newInstance(), encodeSource));
 				}
-			} catch (ClassNotFoundException e1) {
+			} catch (ClassNotFoundException e) {
+				logger.log(Level.WARNING, e.getMessage(), e);
 				return null;
-			} catch (Exception e1) {
+			} catch (Exception e) {
+				logger.log(Level.WARNING, e.getMessage(), e);
 				return null;
 			}
 		} catch (Exception e) {
+			logger.log(Level.WARNING, e.getMessage(), e);
 			return null;
+		}finally {
+			logger.log(Level.INFO, "decodeBASE64-->" + clazz);
+			logger.log(Level.INFO, "decodeMethod-->" + decodeMethod);
 		}
 		/*
 		 * Android
@@ -210,9 +215,10 @@ public class EncryptDecrypt {
 			byte[] result = encryptCipher.doFinal(content);
 			return result; // 加密
 		} catch (Exception e) {
+			logger.log(Level.WARNING, e.getMessage(), e);
 			throw new RuntimeException(e);
 		}
-		//return null;
+		// return null;
 	}
 
 	/**
@@ -228,9 +234,10 @@ public class EncryptDecrypt {
 			byte[] result = decryptCipher.doFinal(content);
 			return result; // 加密结果
 		} catch (Exception e) {
+			logger.log(Level.WARNING, e.getMessage(), e);
 			throw new RuntimeException(e);
 		}
-		//return null;
+		// return null;
 	}
 
 	/**
